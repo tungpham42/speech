@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Container, Form, Button, Row, Col } from "react-bootstrap";
+import { Container, Form, Button, Row, Col, Card } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlay,
@@ -22,7 +22,7 @@ const TextToSpeech = () => {
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
-  const mediaStreamRef = useRef(null); // Reference to store the media stream
+  const mediaStreamRef = useRef(null);
 
   useEffect(() => {
     const synth = window.speechSynthesis;
@@ -46,7 +46,6 @@ const TextToSpeech = () => {
     loadVoices();
     synth.onvoiceschanged = loadVoices;
 
-    // Cleanup function to stop media stream when component unmounts
     return () => {
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach((track) => {
@@ -66,7 +65,7 @@ const TextToSpeech = () => {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream; // Store the media stream reference
+      mediaStreamRef.current = stream;
 
       mediaRecorderRef.current = new MediaRecorder(stream);
 
@@ -85,11 +84,11 @@ const TextToSpeech = () => {
       mediaRecorderRef.current.start();
       window.speechSynthesis.speak(utterance);
 
-      setIsSpeaking(true); // Set speaking status to true
+      setIsSpeaking(true);
 
       utterance.onend = () => {
         mediaRecorderRef.current.stop();
-        setIsSpeaking(false); // Reset speaking status to false
+        setIsSpeaking(false);
       };
     } catch (error) {
       console.error("Error accessing microphone:", error);
@@ -106,7 +105,7 @@ const TextToSpeech = () => {
   const handleLanguageChange = (event) => {
     const lang = event.target.value;
     setSelectedLanguage(lang);
-    setSelectedVoice(null); // Reset selected voice when language changes
+    setSelectedVoice(null);
   };
 
   const handleReset = () => {
@@ -115,11 +114,8 @@ const TextToSpeech = () => {
     setSelectedVoice(null);
     setAudioBlob(null);
     setAudioURL("");
-
-    // Stop speech synthesis
     window.speechSynthesis.cancel();
 
-    // Stop media recording if active
     if (
       mediaRecorderRef.current &&
       mediaRecorderRef.current.state === "recording"
@@ -127,14 +123,13 @@ const TextToSpeech = () => {
       mediaRecorderRef.current.stop();
     }
 
-    // Stop media stream if active
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => {
         track.stop();
       });
     }
 
-    setIsSpeaking(false); // Reset speaking status to false
+    setIsSpeaking(false);
   };
 
   const downloadAudio = () => {
@@ -156,30 +151,33 @@ const TextToSpeech = () => {
   );
 
   return (
-    <Container className="mt-5">
+    <Container className="min-vh-100 d-flex align-items-center justify-content-center py-5">
       <Helmet>
         <title>Text to Speech - Speech App</title>
       </Helmet>
-      <Row>
-        <Col>
-          <h1 className="mb-4">Text to Speech</h1>
+      <Card className="shadow-lg border-0 w-100" style={{ maxWidth: "800px" }}>
+        <Card.Body className="p-5">
+          <h1 className="display-5 fw-bold mb-4 text-center text-primary">
+            Text to Speech
+          </h1>
           <Form>
-            <Form.Group className="mb-3">
-              <Form.Label htmlFor="enterText">Enter Text:</Form.Label>
+            <Form.Group className="mb-4">
+              <Form.Label className="fw-semibold">Enter Text</Form.Label>
               <Form.Control
-                id="enterText"
                 as="textarea"
                 rows={5}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
+                className="shadow-sm"
+                style={{ resize: "none" }}
               />
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label htmlFor="selectLang">Select Language:</Form.Label>
+            <Form.Group className="mb-4">
+              <Form.Label className="fw-semibold">Select Language</Form.Label>
               <Form.Select
-                id="selectLang"
                 value={selectedLanguage}
                 onChange={handleLanguageChange}
+                className="shadow-sm"
               >
                 <option value="">Select a language</option>
                 {languages.map((lang, index) => (
@@ -190,12 +188,12 @@ const TextToSpeech = () => {
               </Form.Select>
             </Form.Group>
             {selectedLanguage && (
-              <Form.Group className="mb-3">
-                <Form.Label htmlFor="selectVoice">Select Voice:</Form.Label>
+              <Form.Group className="mb-4">
+                <Form.Label className="fw-semibold">Select Voice</Form.Label>
                 <Form.Select
-                  id="selectVoice"
                   value={selectedVoice?.name || ""}
                   onChange={handleVoiceChange}
+                  className="shadow-sm"
                 >
                   <option value="">Default</option>
                   {filteredVoices.map((voice, index) => (
@@ -206,37 +204,82 @@ const TextToSpeech = () => {
                 </Form.Select>
               </Form.Group>
             )}
-            <Button variant="primary" onClick={handleSpeak}>
-              {isSpeaking ? (
-                <>
-                  <FontAwesomeIcon icon={faPause} /> Speaking...
-                </>
-              ) : (
-                <>
-                  <FontAwesomeIcon icon={faPlay} /> Speak
-                </>
+            <Row className="g-3">
+              <Col>
+                <Button
+                  variant="primary"
+                  onClick={handleSpeak}
+                  className="w-100 py-3 btn-gradient-primary"
+                  style={{
+                    background: "linear-gradient(90deg, #007bff, #00d4ff)",
+                    border: "none",
+                    transition: "transform 0.2s",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.target.style.transform = "scale(1.05)")
+                  }
+                  onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
+                >
+                  {isSpeaking ? (
+                    <>
+                      <FontAwesomeIcon icon={faPause} /> Speaking...
+                    </>
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faPlay} /> Speak
+                    </>
+                  )}
+                </Button>
+              </Col>
+              {audioURL && (
+                <Col>
+                  <Button
+                    variant="success"
+                    onClick={downloadAudio}
+                    className="w-100 py-3 btn-gradient-success"
+                    style={{
+                      background: "linear-gradient(90deg, #28a745, #20c997)",
+                      border: "none",
+                      transition: "transform 0.2s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.target.style.transform = "scale(1.05)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.transform = "scale(1)")
+                    }
+                  >
+                    <FontAwesomeIcon icon={faDownload} /> Download WEBM
+                  </Button>
+                </Col>
               )}
-            </Button>
+              <Col>
+                <Button
+                  variant="secondary"
+                  onClick={handleReset}
+                  className="w-100 py-3 btn-gradient-secondary"
+                  style={{
+                    background: "linear-gradient(90deg, #6c757d, #adb5bd)",
+                    border: "none",
+                    transition: "transform 0.2s",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.target.style.transform = "scale(1.05)")
+                  }
+                  onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
+                >
+                  <FontAwesomeIcon icon={faUndo} /> Reset
+                </Button>
+              </Col>
+            </Row>
             {audioURL && (
-              <Button
-                variant="success"
-                className="ms-3"
-                onClick={downloadAudio}
-              >
-                <FontAwesomeIcon icon={faDownload} /> Download WEBM
-              </Button>
-            )}
-            <Button variant="secondary" className="ms-3" onClick={handleReset}>
-              <FontAwesomeIcon icon={faUndo} /> Reset
-            </Button>
-            {audioURL && (
-              <div className="mt-3">
-                <audio controls src={audioURL}></audio>
+              <div className="mt-4">
+                <audio controls src={audioURL} className="w-100 shadow-sm" />
               </div>
             )}
           </Form>
-        </Col>
-      </Row>
+        </Card.Body>
+      </Card>
     </Container>
   );
 };
